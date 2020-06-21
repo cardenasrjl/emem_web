@@ -30,7 +30,7 @@ import NucleoIcons from "views/NucleoIcons.js";
 import LandingPage from "views/examples/LandingPage.js";
 import ProfilePage from "views/examples/ProfilePage.js";
 import RegisterPage from "views/examples/RegisterPage.js";
-import MemsIndexPage from "views/pages/MemsIndexPage.js";
+import MemsProfilePage from "views/pages/MemsProfilePage.js";
 import MemsListPage from "views/pages/MemsListPage.js";
 // others
 
@@ -56,7 +56,7 @@ ReactDOM.render(
       />
       <Route
           path="/mems-index"
-          render={props => <MemsIndexPage {...props} />}
+          render={props => <MemsProfilePage {...props} />}
       />
       <Route
           path="/mems-list"

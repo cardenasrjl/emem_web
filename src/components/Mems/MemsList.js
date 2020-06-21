@@ -1,23 +1,50 @@
 import React, {Component} from 'react'
 import axios from 'axios';
-import {Container, Row, Col, Form, Input, Button} from "reactstrap";
+
+
+
+import {
+    Button,
+    Label,
+    FormGroup,
+    Input,
+    NavItem,
+    NavLink,
+    Nav,
+    TabContent,
+    TabPane,
+    Container,
+    Row,
+    Col
+} from "reactstrap";
 
 /**
  * Logic to create a new mem
  */
 class MemsList extends Component {
 
-    state = {
-        mems: []
+    //constructor
+    constructor(props) {
+        super(props)
+        this.state = {
+            description: '',
+            mems: []
+        };
+
     }
 
     componentDidMount() {
         axios.get(`/v1/mems`)
             .then(res => {
                 const mems = res.data;
-                this.setState([mems]);
+                this.setState({mems: mems.mems});
             })
+            .catch(error => {
+                console.log(error.response);
+            });
+
     }
+
 
     //render
     render() {
@@ -26,14 +53,36 @@ class MemsList extends Component {
             const mems =  props.mems;
 
             const listItems = mems.map((mem) =>
-                <div className="row">
-                    <div className="typography-line"><span className="note">{mem.id}</span>
-                        <blockquote className="blockquote"><p className="mb-0">{mem.description}</p><br/>
-                            <footer className="blockquote-footer">Someone famous in <cite title="source Title">Source
-                                Title</cite></footer>
-                        </blockquote>
-                    </div>
-                </div>
+                <Row>
+                    <Col className="ml-auto mr-auto" md="10">
+                        <ul className="list-unstyled follows">
+                            <li>
+                                <Row>
+                                    <Col className="ml-auto mr-auto" lg="2" md="2" xs="4">
+                                        <img
+                                            alt="..."
+                                            className="img-circle img-no-padding img-responsive"
+                                            src={require("assets/img/faces/jorge-cardenas-pic.jpg")}
+                                        />
+                                    </Col>
+                                    <Col className="ml-auto mr-auto" lg="7" md="8" xs="4">
+                                        <h6>
+                                            {mem.title} <br />
+                                            <small>{mem.description}</small>
+                                        </h6>
+                                    </Col>
+                                    <Col className="ml-auto mr-auto" lg="3" md="2" xs="4">
+                                        <FormGroup check>
+                                            <label className="label label-info mr-1">Edit</label>
+                                            <label className="label label-danger mr-1">Remove</label>
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
+                            </li>
+                            <hr />
+                        </ul>
+                    </Col>
+                </Row>
 
             );
             return listItems
@@ -41,12 +90,7 @@ class MemsList extends Component {
 
         return (
             <>
-                <div className="tim-container container">
-                    <div className="title"><h3>Your recent thoughts..</h3></div>
-                    <div id="typography">
-                        <ListMems mems={this.state.mems} />
-                    </div>
-                </div>
+                <ListMems mems={this.state.mems}/>
             </>
         )
     }

@@ -1,119 +1,160 @@
 import React, {Component} from 'react'
 import axios from 'axios';
-import {Container, Row, Col, Form, Input, Button} from "reactstrap";
+import {Container, Row, Col, Form, Input, Button, Modal} from "reactstrap";
+import {Editor, EditorState, RichUtils, convertToRaw} from 'draft-js';
+import 'draft-js/dist/Draft.css';
+
+
+const styles = {
+    editor: {
+        border: '1px solid gray',
+        minHeight: '20em'
+    }
+};
 
 /**
  * Logic to create a new mem
  */
 class NewMem extends Component {
-
     //constructor
     constructor(props) {
         super(props)
         this.state = {
             description: '',
-            mems: []
+            mems: [],
+            editorState: EditorState.createEmpty(),
+            modal:false,
         };
 
-        this.onChangeDescription = this.onChangeDescription.bind(this);
-        this.onSubmit = this.onSubmit.bind(this);
+        this.onChange = (editorState) => this.setState({editorState});
 
-    }
+        this.setEditor = (editor) => {
+            this.editor = editor;
+        };
 
-    //change description
-    onChangeDescription(e) {
-        this.setState({description: e.target.value})
+        this.focusEditor = () => {
+            if (this.editor) {
+                this.editor.focus();
+            }
+        };
+
+        this.toggleModal = () => {
+            if (this.state.modal) {
+                this.createEmem();
+            }
+            this.setState({modal: !this.state.modal});
+        };
+
     }
 
     componentDidMount() {
-        axios.get(`/v1/mems`)
-            .then(res => {
-                const mems = res.data;
-                debugger;
-                this.setState({mems: mems.mems});
-            })
+        this.focusEditor();
     }
 
-    //submit
-    onSubmit(e) {
-        e.preventDefault()
+    //create a new event
+    createEmem() {
+        var newThought = this.getPlainText();
 
-        const ememObject = {
-            title: 'Missing title...',
-            description: this.state.description,
-        };
+        if (newThought.length > 5) {
+            const ememObject = {
+                title: 'Missing title...',
+                description: this.getPlainText(),
+            };
 
-        axios.post("/v1/mems", ememObject)
-            .then((res) => {
-                console.log(res.data)
-                debugger;
-            }).catch((error) => {
-            console.log(error)
-        });
-
-        this.setState({description: ''})
+            axios.post("/v1/mems", ememObject)
+                .then((res) => {
+                    //TODO: Update texts
+                    console.log(res.data)
+                }).catch((error) => {
+                    alert(error);
+            });
+        }
     }
+
+    getPlainText() {
+        const { blocks } = convertToRaw(this.state.editorState.getCurrentContent());
+        const mappedBlocks = blocks.map(
+            block => (!block.text.trim() && "\n") || block.text,
+        );
+
+        return mappedBlocks.reduce((acc, block) => {
+            let returned = acc;
+            if (block === "\n") returned += block;
+            else returned += `${block}\n`;
+            return returned;
+        }, "");
+    }
+
 
     //render
     render() {
-
-        function ListMems(props) {
-            const mems =  props.mems;
-
-            const listItems = mems.map((mem) =>
-                <div className="row">
-                    <div className="typography-line"><span className="note">{mem.id}</span>
-                        <blockquote className="blockquote"><p className="mb-0">{mem.description}</p><br/>
-                            <footer className="blockquote-footer">Someone famous in <cite title="source Title">Source
-                                Title</cite></footer>
-                        </blockquote>
-                    </div>
-                </div>
-
-            );
-            return listItems
-        }
-
-        return (
+            return (
             <>
-                <div className="section">
-                    <Container>
-                        <Row>
-                            <Col className="ml-auto mr-auto" md="8">
-                                <h2 className="text-center">What are you thinking?</h2>
-                                <Form className="contact-form" onSubmit={this.onSubmit}>
-                                    <label>Message</label>
-                                    <Input
-                                        placeholder="Release your thoughts and feelings..."
-                                        type="textarea"
-                                        rows="4"
-                                        value={this.state.description}
-                                        name="description"
-                                        onChange={this.onChangeDescription}
-
-                                    />
-                                    <Row>
-                                        <Col className="ml-auto mr-auto" md="4">
-                                            <Button className="btn-fill" color="danger"
-                                                    size="lg" type="submit">
-                                                Release
-                                            </Button>
-                                        </Col>
-                                    </Row>
-                                </Form>
-                            </Col>
-                        </Row>
-                    </Container>
-                </div>
-                <div className="tim-container container">
-                    <div className="title"><h3>Your recent thoughts..</h3></div>
-                    <div id="typography">
-                        <ListMems mems={this.state.mems} />
+                {/* Modal */}
+                <Button
+                    className="btn-round"
+                    color="success"
+                    type="button"
+                    onClick={this.toggleModal}
+                    id="btnOpenModal"
+                >
+                    Create
+                </Button>
+                <Modal
+                    isOpen={this.state.modal}
+                    toggle={this.toggleModal}
+                    dialogClassName="modal-thought"
+                >
+                    <div className="modal-header">
+                        <button
+                            aria-label="Close"
+                            className="close"
+                            type="button"
+                            onClick={this.toggleModal}
+                        >
+                            <span aria-hidden={true}>×</span>
+                        </button>
+                        <h5
+                            className="modal-title text-center"
+                            id="exampleModalLabel"
+                        >
+                           Release your self.
+                        </h5>
                     </div>
-                </div>
-            </>
+                    <div style={styles.editor} >
+                        <div className="modal-body">
+                            <Editor
+                                ref={this.setEditor}
+                                editorState={this.state.editorState}
+                                onChange={this.onChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <div className="left-side">
+                            <Button
+                                className="btn-link"
+                                color="success"
+                                type="button"
+                                onClick={this.toggleModal}
+                                id="btnSave"
+                            >
+                                Save
+                            </Button>
+                        </div>
+                        <div className="divider" />
+                        <div className="right-side">
+                            <Button className="btn-link" color="danger" type="button" onClick={this.toggleModal}>
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
 
-        )
+
+            </> )
+
+
     }
 }
 
